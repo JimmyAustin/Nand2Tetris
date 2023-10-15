@@ -3,10 +3,10 @@
 // by Nisan and Schocken, MIT Press.
 // File name: projects/02/Inc16.hdl
 /**
- * Returns the final bit of a 16-bit:
+ * Returns the most significatn bit of a 16-bit bus:
  * out = in + 1
  */
-CHIP FirstBit16 {
+CHIP MSB16 {
     IN in[16];
     OUT out;
 

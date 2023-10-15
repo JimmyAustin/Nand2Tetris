@@ -67,5 +67,5 @@ CHIP ALU {
     Not(in=nzr, out=zr);
 
     // Calculate ng = (out < 0,  1, 0)
-    FirstBit16(in=result, out=ng);
+    MSB16(in=result, out=ng);
 }
