@@ -40,5 +40,32 @@ CHIP ALU {
         ng;      // (out < 0,  1, 0)
 
     PARTS:
-    //// Replace this comment with your code.
+    Zero16(out=zeroPins);
+
+    Mux16(a=x, b=zeroPins, sel=zx, out=postzxX);
+    Not16(in=postzxX, out=negatedX);
+    Mux16(a=postzxX, b=negatedX, sel=nx, out=calcedX);
+
+    Mux16(a=y, b=zeroPins, sel=zy, out=postzyY);
+    Not16(in=postzyY, out=negatedY);
+    Mux16(a=postzyY, b=negatedY, sel=ny, out=calcedY);
+
+    Add16(a=calcedX, b=calcedY, out=xyAdd);
+    And16(a=calcedX, b=calcedY, out=xyAnd);
+
+    Mux16(a=xyAnd, b=xyAdd, sel=f, out=calcedXy);
+
+    Not16(in=calcedXy, out=negateCalcedXy);
+    Mux16(a=calcedXy, b=negateCalcedXy, sel=no, out=result);
+
+    // Calculate Out
+    Not16(in=result, out=nResult);
+    Not16(in=nResult, out=out);
+
+    // Calculate zr = (out == 0, 1, 0)
+    Or16Way(in=result, out=nzr); // Calculate if there are any true pins
+    Not(in=nzr, out=zr);
+
+    // Calculate ng = (out < 0,  1, 0)
+    FirstBit16(in=result, out=ng);
 }
