@@ -58,7 +58,8 @@ CHIP ALU {
     Not16(in=calcedXy, out=negateCalcedXy);
     Mux16(a=calcedXy, b=negateCalcedXy, sel=no, out=result);
 
-    // Calculate Out
+    // Calculate Out. The double negation is necessary because we can't use out downstream.
+    // This could also be replaced with a Mux16, but that would be less efficient.
     Not16(in=result, out=nResult);
     Not16(in=nResult, out=out);
 
