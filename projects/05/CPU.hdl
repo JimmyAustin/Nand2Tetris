@@ -33,4 +33,8 @@ CHIP CPU {
 
     PARTS:
     //// Replace this comment with your code.
+    // instruction[16]
+    // ixxaccccccdddjjj
+    // i = The i-bit (also known as opcode) codes the instruction type, which is either 0 for an A-instruction or 1 for a C-instruction.
+    
 }

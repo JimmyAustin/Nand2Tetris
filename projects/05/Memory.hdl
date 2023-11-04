@@ -20,4 +20,32 @@ CHIP Memory {
 
     PARTS:
     //// Replace this comment with your code.
+
+    // Approach
+    // Figure out which chip we want to access
+    // - AND the address against certain patterns to see which match?
+    //  - RAM:      000000000000000 -> 011111111111111
+    //  - Screen:   100000000000000 -> 101111111111111
+    //  - Keyboard: 110000000000000
+
+
+
+    // - Use RAM = AND(in[3],NAND(in[2],in[3]))
+    // - Use Screen = AND(in[2],NAND(in[2],in[3]))
+    // - Use Keyboard = AND(in[2], in[3])
+    // input for each device = AND(in, selectorPin)
+
+    // Chips = RAM16K, Screen, and Keyboard
+
+    // Use a demuxer to set the load pin for each device, muxer to get outputs?
+
+    // Load pin selector.
+    DMux4Way(in=load, sel=address[13..14], a=ramLoadA, b=ramLoadB, c=screenLoad);
+    Or(a=ramLoadA, b=ramLoadB, out=ramLoad);
+
+    RAM16K(in=in, load=ramLoad, address=address[0..13], out=ramOut);
+    Screen(in=in, load=screenLoad, address=address[0..12], out=screenOut);
+    Keyboard(out=keyboardOut);
+
+    Mux4Way16(a=ramOut, b=ramOut, c=screenOut, d=keyboardOut, sel=address[13..14], out=out);
 }
