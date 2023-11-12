@@ -35,6 +35,75 @@ CHIP CPU {
     //// Replace this comment with your code.
     // instruction[16]
     // ixxaccccccdddjjj
-    // i = The i-bit (also known as opcode) codes the instruction type, which is either 0 for an A-instruction or 1 for a C-instruction.
+    // i = instruction[0][15] = The i-bit (also known as opcode) codes the instruction type, which is either 0 for an A-instruction or 1 for a C-instruction. If it's an A instruction, we just dump it into A?
+    // x = instruction[1:2][13:14] = Not used
+    // a = instruction[3][12] = specifies if we want to compare with A or M? I think this is what controls the selector for the second mux16?
+    // c = instruction[4:9][6:11] = comp
+        // instruction[4][11] = zx, if zx then x = 0
+        // instruction[5][10] = nx, if nx then x = !x
+        // instruction[6][9] = zy, if zy then y = 0
+        // instruction[7][8] = ny, if ny then y = !y
+        // instruction[8][7] = f, if f then out = x + y else out = x&y
+        // instruction[9][6] = no, if no then out=!out
+    // d = instruction[10:12][3:5] = dest
+        // instruction[10][5] = store comp in A reg
+        // instruction[11][4] = store comp in D reg
+        // instruction[12][3] = store comp in Ram[A]
+    // j = instruction[13:15][0:2] = jump. These are or'd together.
+        // instruction[13][2] = jump if comp < 0
+        // instruction[14][1] = jump if comp = 0
+        // instruction[15][0] = jump if comp > 0
+    // Precise specification found on page 71 of the book.
     
+    Not(in=instruction[15], out=isAInstruction);
+    Not(in=isAInstruction, out=isCInstruction);
+    
+    // Components
+    // Mux16
+    Mux16(a=aluOutput, b=instruction, sel=isAInstruction, out=mux1Output);
+
+    // A register
+    // Should be set if either is true:
+    //  instruction[0] is 0 (meaning A instruction), 
+    //  instruction[10] is true (meaning we are saving comp result to true)
+    Or(a=instruction[5], b=isAInstruction, out=setAReg);
+    ARegister(in=mux1Output, load=setAReg, out=aRegisterOut);
+
+    // D register
+    And(a=instruction[4], b=isCInstruction, out=setDReg);
+    DRegister(in=aluOutput, load=setDReg, out=dRegOut);
+
+    // Mux16
+    Mux16(a=aRegisterOut, b=inM, sel=instruction[12], out=mux2Output); // Not sure about this instruction
+
+    // ALU
+    ALU(x=dRegOut, y=mux2Output, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=aluOutput, zr=zrOut, ng=ngOut);
+
+    // PC
+    // alu has two outputs that can help us.
+    // zr = out == 0
+    // ng = out < 0
+    // implies that nl (out > 0) == NOR(zr,ng)
+    And(a=instruction[2], b=ngOut, out=jumpNg);
+    And(a=instruction[1], b=zrOut, out=jumpZr);
+    Or(a=zrOut, b=ngOut, out=notNlOut);
+    Not(in=notNlOut, out=nlOut);
+    And(a=instruction[0], b=nlOut, out=jumpNl);
+    Or(a=jumpNg, b=jumpZr, out=jumpNgOrZr);
+    Or(a=jumpNgOrZr, b=jumpNl, out=jumpConditionals);
+    And(a=jumpConditionals, b=instruction[15], out=shouldJump);
+    Not(in=shouldJump, out=shouldInc);
+    PC(in=aRegisterOut, load=shouldJump, inc=shouldInc, reset=reset, out=outPc);
+    Bus16To15(in=outPc,out=pc);
+
+    // OutM
+    Or16(a=aluOutput, b=aluOutput, out=outM);
+
+    // AddressM
+    Bus16To15(in=aRegisterOut, out=addressM);
+
+    // WriteM
+    Or(a=instruction[15], b=instruction[15], out=instruction0);
+    Or(a=instruction[3], b=instruction[3], out=instruction3);
+    And(a=instruction[15], b=instruction[3], out=writeM);
 }
